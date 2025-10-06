@@ -1,4 +1,6 @@
-  
+/* Used this as sort of a cheat sheet / rough guide on how to configure a 3d landscape with perlin noise 
+- Omar salinas https://codepen.io/osalinasv/pen/Epjaxp. 
+Also a early source of inspiration even though we want this to be way more angular and not smooth to fit the vaporwave theme   */
   
 
 // in order to combine two canvases WebGL 3D (this one) and a regular 2d one in the future
@@ -38,13 +40,13 @@ const noiseScale = 0.15
 
 function setup() {
 
-  createCanvas(canvasWidth, canvasHeight)
+ createCanvas(canvasWidth, canvasHeight)
 
-  foregroundLayer = createGraphics(canvasWidth, canvasHeight, WEBGL)
+ foregroundLayer = createGraphics(canvasWidth, canvasHeight, WEBGL)
 
-  //create terrain
+ //create terrain
 
-  vertices = createVertices(columns, rows, gridScale)
+ vertices = createVertices(columns, rows, gridScale)
 
 }
 
@@ -52,23 +54,23 @@ function setup() {
 
 const createVertices = (cols, rows, scale = 1) => {
 
-  const numDots = cols * rows
+ const numDots = cols * rows
 
-  const points = new Array(numDots)
-
-  
-
-  for (let i = 0; i < numDots; i++) {
-
-    const x = i % cols
-
-    points[i] = [x * scale, ((i - x) / cols) * scale]
-
-  }
+ const points = new Array(numDots)
 
   
 
-  return points
+ for (let i = 0; i < numDots; i++) {
+
+  const x = i % cols
+
+  points[i] = [x * scale, ((i - x) / cols) * scale]
+
+ }
+
+  
+
+ return points
 
 }
 
@@ -76,15 +78,15 @@ const createVertices = (cols, rows, scale = 1) => {
 
 function draw() {
 
-  background(0)
+ background(0)
 
-  // Draw static wireframe
+ // Draw static wireframe
 
-  drawWireframeLandscape()
+ drawWireframeLandscape()
 
-  // Display the wireframe
+ // Display the wireframe
 
-  image(foregroundLayer, 0, 0)
+ image(foregroundLayer, 0, 0)
 
 }
 
@@ -92,89 +94,89 @@ function draw() {
 
 function drawWireframeLandscape() {
 
-  foregroundLayer.clear()
+ foregroundLayer.clear()
 
-  foregroundLayer.push()
-
-  
-
-  // camera
-
-  foregroundLayer.translate(0, -1000, -1920)
-
-  foregroundLayer.rotateX(PI / 2.7)
-
-  foregroundLayer.translate(-gridWidth / 2, gridHeight / 2 - 150)
+ foregroundLayer.push()
 
   
 
-  // wireframe style
+ // camera
 
-  foregroundLayer.stroke(255)
+ foregroundLayer.translate(0, -1000, -1920)
 
-  foregroundLayer.strokeWeight(1)
+ foregroundLayer.rotateX(PI / 2.7)
 
-  foregroundLayer.fill(0)
-
-  
-
-  const amplitude = 100
-
-  // Draw terrain using triangle strips
-
-  for (let y = 0; y < rows - 1; y++) {
-
-    foregroundLayer.beginShape(TRIANGLE_STRIP)
+ foregroundLayer.translate(-gridWidth / 2, gridHeight / 2 - 150)
 
   
 
-    for (let x = 0; x < columns; x++) {
+ // wireframe style
 
-      const currentIndex = y * columns + x
+ foregroundLayer.stroke(255)
 
-      const nextIndex = (y + 1) * columns + x
+ foregroundLayer.strokeWeight(1)
 
-  
-
-      // Get x,y positions (need to make this scroll)
-
-      let [x1, y1] = vertices[currentIndex]
-
-      let [x2, y2] = vertices[nextIndex]
+ foregroundLayer.fill(0)
 
   
 
-      // noise sampling
+ const amplitude = 100
 
-      let xnoise = (x * gridScale) * noiseScale / gridScale
+ // Draw terrain using triangle strips
 
-      let ynoise1 = y1 * noiseScale / gridScale
+ for (let y = 0; y < rows - 1; y++) {
 
-      let ynoise2 = y2 * noiseScale / gridScale
-
-  
-
-      // height
-
-      let z1 = getTerrainHeight(xnoise, ynoise1, amplitude)
-
-      let z2 = getTerrainHeight(xnoise, ynoise2, amplitude)
+  foregroundLayer.beginShape(TRIANGLE_STRIP)
 
   
 
-      foregroundLayer.vertex(x1, y1, z1)
+  for (let x = 0; x < columns; x++) {
 
-      foregroundLayer.vertex(x2, y2, z2)
+   const currentIndex = y * columns + x
 
-    }
+   const nextIndex = (y + 1) * columns + x
 
   
 
-    foregroundLayer.endShape()
+   // Get x,y positions (need to make this scroll)
 
-  }
+   let [x1, y1] = vertices[currentIndex]
 
-  foregroundLayer.pop()
+   let [x2, y2] = vertices[nextIndex]
+
+  
+
+   // noise sampling
+
+   let xnoise = (x * gridScale) * noiseScale / gridScale
+
+   let ynoise1 = y1 * noiseScale / gridScale
+
+   let ynoise2 = y2 * noiseScale / gridScale
+
+  
+
+   // height
+
+   let z1 = getTerrainHeight(xnoise, ynoise1, amplitude)
+
+   let z2 = getTerrainHeight(xnoise, ynoise2, amplitude)
+
+  
+
+   foregroundLayer.vertex(x1, y1, z1)
+
+   foregroundLayer.vertex(x2, y2, z2)
+
+  }
+
+  
+
+  foregroundLayer.endShape()
+
+ }
+
+ foregroundLayer.pop()
 
 }
 
@@ -184,13 +186,13 @@ function drawWireframeLandscape() {
 
 function getTerrainHeight(xnoise, ynoise, amplitude) {
 
-  // Perlin noise
+ // Perlin noise
 
-  let height = map(noise(xnoise, ynoise), 0, 1, -amplitude, amplitude)
+ let height = map(noise(xnoise, ynoise), 0, 1, -amplitude, amplitude)
 
   
   
 
-  return height
+ return height
 
 }
