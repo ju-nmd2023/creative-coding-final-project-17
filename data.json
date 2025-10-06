@@ -1,0 +1,7 @@
+[
+  {
+    "file": "experiments/VaporwaveVisualizer.js",
+    "name": "Vaporwave Visualizer",
+    "description": "Vaporwave visualizer with tone.js and P5.js"
+  }
+]
