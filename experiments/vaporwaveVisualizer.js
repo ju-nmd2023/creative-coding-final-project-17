@@ -18,7 +18,7 @@ const gridScale = 40
 const columns = Math.floor(gridWidth / gridScale)
 const rows = Math.floor(gridHeight / gridScale)
 
-// --- New variables for road and mountain boundaries ---
+// road width
 const roadWidthRatio = 0.15
 const firstMountainRangeRatio = 0.35
 
@@ -78,8 +78,7 @@ function drawWireframeLandscape() {
     foregroundLayer.beginShape(TRIANGLE_STRIP)
 
     for (let x = 0; x < columns; x++) {
-      // --- road or mountains ---
-      // Calculate how far the current point is from the center (0.0 to 1.0)
+      // Calculate center 0-1, to set road width
       let distFromCenter = abs(x - columns / 2) / (columns / 2)
 
       const currentIndex = y * columns + x
@@ -94,7 +93,6 @@ function drawWireframeLandscape() {
       let ynoise1 = (y1 * noiseScale) / gridScale + noiseOffset
       let ynoise2 = (y2 * noiseScale) / gridScale + noiseOffset
 
-      // --- get terrain height with road and mountains ---
       let z1 = getTerrainHeight(xnoise, ynoise1, distFromCenter, amplitude)
       let z2 = getTerrainHeight(xnoise, ynoise2, distFromCenter, amplitude)
 
@@ -124,7 +122,7 @@ function getTerrainHeight(xnoise, ynoise, distFromCenter, amplitude) {
     heightMultiplier = pow(distFromCenter + 0.2, 4)
     finalHeight = baseHeight * heightMultiplier
   } else if (distFromCenter < firstMountainRangeRatio) {
-    // first mountains kinda tall
+    // first mountains small
     let rangePos = map(
       distFromCenter,
       roadWidthRatio,
@@ -136,14 +134,14 @@ function getTerrainHeight(xnoise, ynoise, distFromCenter, amplitude) {
     finalHeight = baseHeight * heightMultiplier * 1.5
     finalHeight += linearHeightBoost
   } else {
-    // second mountains OMG so tall!
+    // second mountains tall
     let rangePos = map(distFromCenter, firstMountainRangeRatio, 1, 0, 1)
     heightMultiplier = pow(rangePos + 0.3, 2)
     finalHeight = baseHeight * heightMultiplier * 3.5
     finalHeight += linearHeightBoost * 2
   }
 
-  // nothing below road level (0)
+  // Prevent neagative height values
   finalHeight = max(finalHeight, 0)
 
   return finalHeight
