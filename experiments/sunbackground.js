@@ -19,6 +19,7 @@ function draw() {
       gradient.addColorStop(0.5, color(340, 80, 100));  
   gradient.addColorStop(1, color(50, 100, 100)); 
   gradient.addColorStop(1, color(30, 100, 100, 0)); 
+  
         
         
         drawingContext.fillStyle=gradient;
@@ -31,7 +32,7 @@ function draw() {
     color(310,100,100,100),
     color(250,100,100,100)
 );
-ellipse(width/2,height/2,400,400);
+ellipse(width/2,height/2 ,400,400);
 
 
 function linearGradient(sX,sY,eX,colorS,colorE) {
