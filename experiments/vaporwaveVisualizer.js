@@ -89,7 +89,6 @@ function setup() {
   // make terrain height points
   vertices = createVertices(columns, rows, gridScale)
 
-
   
   // setup music
   setupAudioContext()
@@ -158,7 +157,7 @@ function drawWireframeLandscape() {
   foregroundLayer.translate(-gridWidth / 2, gridHeight / 2 - 150)
 
   // wireframe style - white, no color animation
-  foregroundLayer.stroke(255)
+  foregroundLayer.stroke(255,0,255)
   foregroundLayer.strokeWeight(1)
   foregroundLayer.noFill()
 
