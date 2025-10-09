@@ -40,6 +40,10 @@ let audioAnalyser = null
 let currentIntensity = 0
 let currentTempo = 120
 
+// colors
+let pink, cyan, green
+let sunColor1, sunColor2
+
 // all the songs
 const midiFiles = [
   "Initial D - Rage Your Dream.json",
@@ -89,7 +93,13 @@ function setup() {
   // make terrain height points
   vertices = createVertices(columns, rows, gridScale)
 
-  
+  // define sick color palette
+  pink = color(255, 0, 255)
+  cyan = color(0, 255, 255)
+  green = color(0, 255, 0)
+  sunColor1 = color(255, 100, 150)
+  sunColor2 = color(255, 200, 50)
+
   // setup music
   setupAudioContext()
 // music ui controls
@@ -151,13 +161,14 @@ function drawWireframeLandscape() {
   foregroundLayer.clear()
   foregroundLayer.push()
 
-  //should make this lower
-  foregroundLayer.translate(0, -1000, -1920)
-  foregroundLayer.rotateX(PI / 2.7)
+  foregroundLayer.translate(0, 10, -1400)
+  foregroundLayer.rotateX(PI / 2.006)
   foregroundLayer.translate(-gridWidth / 2, gridHeight / 2 - 150)
 
-  // wireframe style - white, no color animation
-  foregroundLayer.stroke(255,0,255)
+  // make colors pulse
+  let time = frameCount * 0.05
+  let mountainMix = (sin(time) + 1) / 2
+
   foregroundLayer.strokeWeight(1)
   foregroundLayer.noFill()
 
@@ -174,6 +185,13 @@ function drawWireframeLandscape() {
     for (let x = 0; x < columns; x++) {
       // distance from center (for road vs mountains)
       let distFromCenter = abs(x - columns / 2) / (columns / 2)
+
+      // calculate colors
+      let strokeColor = lerpColor(cyan, pink, mountainMix)
+
+      foregroundLayer.stroke(strokeColor)
+      foregroundLayer.strokeWeight(0.5)
+      foregroundLayer.fill(0)
 
       const currentIndex = y * columns + x
       const nextIndex = (y + 1) * columns + x
