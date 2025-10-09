@@ -1,22 +1,20 @@
 // Vaporwave Visualizer
-// 3D landscape with perlin noise by Omar salinas https://codepen.io/osalinasv/pen/Epjaxp
-
 // layers
-let backgroundLayer
-let foregroundLayer
+let backgroundLayer // gradient and sun
+let foregroundLayer // 3D, wireframe mountains
 
-// canvas size
-const canvasWidth = 1920
-const canvasHeight = 1080
+// fixed canvas size
+const canvasWidth = 1080
+const canvasHeight = 720
 
-// wireframe terrain
+// wireframe ground
 const gridWidth = canvasWidth
 const gridHeight = canvasHeight * 2
 const gridScale = 40
 const columns = Math.floor(gridWidth / gridScale)
 const rows = Math.floor(gridHeight / gridScale)
 
-// road and mountain boundaries
+// road and mountain  boundaries
 const roadWidthRatio = 0.15
 const firstMountainRangeRatio = 0.35
 
@@ -25,14 +23,15 @@ const noiseScale = 0.15
 const noiseOffsetSpeed = 0.007
 let noiseOffset = 0
 
-// terrain scrolling
+// terrain scrolling animation
+// terrainScrollDuration time (seconds) for ground to scroll one grid square (40 units)
 const terrainScrollDuration = 1.052
 let terrainScrollOffset = 0
 
-// scale to fit window
+// scaling the whole thing
 let scaleFactor = 1
 
-// music variables
+// music tone.js variables
 let midi = null
 let synths = []
 let isPlaying = false
@@ -40,30 +39,11 @@ let audioAnalyser = null
 let currentIntensity = 0
 let currentTempo = 120
 
-// colors
-let pink, cyan, green
-let sunColor1, sunColor2
 
-// all the songs
 const midiFiles = [
   "Initial D - Rage Your Dream.json",
-  "Cool Cool Mountain.json",
-  "Timber.json",
-  "Mii Channel.json",
-  "var ska vi sova inatt perikles.json",
-  "International Love.json",
-  "All Star smash mouth.json",
-  "Beethoven Moonlight Sonata.json",
   "MGMT - Kids.json",
-  "Tokyo drift.json",
-  "Pingu.json",
-  "Smash Mouth Im A Believer.json",
   "daft_punk-giorgio_by_moroder.json",
-  "Gangnam Style.json",
-  "Feel this moment.json",
-  "Ma Baker.json",
-  "What ive done.json",
-  "Rasputin.json",
   "Crawling (linkin park).json",
   "Alphaville - Big in Japan.json",
   "Axel F.json",
@@ -75,22 +55,24 @@ const midiFiles = [
   "Cry for you.json",
   "Sans undertale.json",
 ]
-let currentMidiIndex = 0
+let currentMidiIndex = 0;
 
+// colors
+let pink, cyan, green
 
 function setup() {
   createCanvas(canvasWidth, canvasHeight)
 
   pixelDensity(Math.floor(1 + Math.max(windowWidth, windowHeight) / canvasWidth))
 
-  // figure out scaling
+  // figure out how much to tretch
   calculateScaleFactor()
 
-  // make layers to add the sun later
+  // two separate drawing areas (remove this or add background layer  code in here)
   backgroundLayer = createGraphics(canvasWidth, canvasHeight)
   foregroundLayer = createGraphics(canvasWidth, canvasHeight, WEBGL)
 
-  // make terrain height points
+  // make all the little dots for terrain
   vertices = createVertices(columns, rows, gridScale)
 
   // define sick color palette
@@ -100,12 +82,20 @@ function setup() {
   sunColor1 = color(255, 100, 150)
   sunColor2 = color(255, 200, 50)
 
-  // setup music
+  // draw the background here 
+  drawVaporwaveBackground(
+    backgroundLayer,
+    canvasWidth,
+    canvasHeight,
+  )
+
+  // setup music player
   setupAudioContext()
-// music ui controls
+
+  // make play/pause/next song buttons
   createUIControls()
 
-  // scale canvas
+  // apply initial scaling
   let canvasElement = document.querySelector("canvas")
   if (canvasElement) {
     canvasElement.style.width = windowWidth + "px"
@@ -117,7 +107,10 @@ function calculateScaleFactor() {
   scaleFactor = windowWidth / canvasWidth
 }
 
-// make terrain height points
+// helper functions for bumpy terrain
+const mapNoise = (value, min, max) =>
+  (max - min) * Math.sin(value * value * Math.PI) + min
+
 const createVertices = (cols, rows, scale = 1) => {
   const numDots = cols * rows
   const points = new Array(numDots)
@@ -131,32 +124,34 @@ const createVertices = (cols, rows, scale = 1) => {
 }
 
 function draw() {
-  // update audi
+  // if music playing, update visualizer
   if (isPlaying && audioAnalyser) {
     updateAudioAnalysis()
   }
 
+  // clear main canvas
   clear()
 
+  // put background on main canvas
   image(backgroundLayer, 0, 0)
 
-  // draw  wireframe
+  // draw 3D wireframe onto its own layer
   drawWireframeLandscape()
 
-  // put wireframe on top
+  // put 3D layer on top of background
   image(foregroundLayer, 0, 0)
 
-  // move bumps
+  // make bumps move
   noiseOffset -= noiseOffsetSpeed
 
-  // scroll terrain forward
+  // make terrain scroll forward
   terrainScrollOffset += gridScale / (terrainScrollDuration * 60)
   if (terrainScrollOffset >= gridScale) {
-    terrainScrollOffset -= gridScale
+    terrainScrollOffset -= gridScale // loop seamlessly
   }
 }
 
-// draw wireframe mountains and road
+// cool wireframe mountains and road
 function drawWireframeLandscape() {
   foregroundLayer.clear()
   foregroundLayer.push()
@@ -172,18 +167,18 @@ function drawWireframeLandscape() {
   foregroundLayer.strokeWeight(1)
   foregroundLayer.noFill()
 
-  // base height
+  // base amplitude
   const baseAmplitude = 25
-  // music controls amplitude of mountains
+  // bounce with music
   const audioMultiplier = 1 + currentIntensity * 2.5
   const amplitude = baseAmplitude * audioMultiplier
 
-  // draw terrain
+  // draw terrain using triangle strips
   for (let y = 0; y < rows - 1; y++) {
     foregroundLayer.beginShape(TRIANGLE_STRIP)
 
     for (let x = 0; x < columns; x++) {
-      // distance from center (for road vs mountains)
+      // road or mountains
       let distFromCenter = abs(x - columns / 2) / (columns / 2)
 
       // calculate colors
@@ -196,15 +191,15 @@ function drawWireframeLandscape() {
       const currentIndex = y * columns + x
       const nextIndex = (y + 1) * columns + x
 
-      // get positions
+      // get x,y positions
       let [x1, y1] = vertices[currentIndex]
       let [x2, y2] = vertices[nextIndex]
 
-      // add scroll and loop
+      // add scroll offset and loop seamlessly
       let scrolledY1 = (y1 + terrainScrollOffset) % gridHeight
       let scrolledY2 = (y2 + terrainScrollOffset) % gridHeight
 
-      // noise sampling
+      // sample noise based on scrolled position for smooth movement
       let xnoise = (x * gridScale) * noiseScale / gridScale
       let ynoise1 =
         (scrolledY1 + noiseOffset * gridScale / noiseScale) * noiseScale /
@@ -213,7 +208,7 @@ function drawWireframeLandscape() {
         (scrolledY2 + noiseOffset * gridScale / noiseScale) * noiseScale /
         gridScale
 
-      // get height with music and mountains
+      // get terrain height with music and mountains
       let z1 = getTerrainHeight(xnoise, ynoise1, distFromCenter, amplitude)
       let z2 = getTerrainHeight(xnoise, ynoise2, distFromCenter, amplitude)
 
@@ -227,12 +222,12 @@ function drawWireframeLandscape() {
   foregroundLayer.pop()
 }
 
-// calculate terrain height
+// calculate terrain height with noise and music and mountains
 function getTerrainHeight(xnoise, ynoise, distFromCenter, amplitude) {
-  // basic noise
+  // basic terrain bumps (Perlin noise)
   let baseHeight = map(noise(xnoise, ynoise), 0, 1, -amplitude, amplitude)
 
-  // add detail 
+  // add more detail for roughness
   baseHeight += map(
     noise(xnoise * 2, ynoise * 2),
     0,
@@ -248,51 +243,50 @@ function getTerrainHeight(xnoise, ynoise, distFromCenter, amplitude) {
     amplitude * 0.15,
   )
 
-  // mountains taller away from road
+  // mountains taller further from road
   let linearHeightBoost = distFromCenter * amplitude * 1.5
 
+  // road flat, mountains tall (two ranges)
   let heightMultiplier
   let finalHeight
 
   if (distFromCenter < roadWidthRatio) {
-    // road flat
+    // road super flat
     heightMultiplier = pow(distFromCenter + 0.2, 4)
     finalHeight = baseHeight * heightMultiplier
   } else if (distFromCenter < firstMountainRangeRatio) {
-    // first mountains small
+    // first mountains kinda tall
     let rangePos = map(distFromCenter, roadWidthRatio, firstMountainRangeRatio, 0, 1)
     heightMultiplier = pow(rangePos + 0.5, 2.5)
     finalHeight = baseHeight * heightMultiplier * 1.5
     finalHeight += linearHeightBoost
   } else {
-    // second mountains tall
+    // second mountains OMG so tall!
     let rangePos = map(distFromCenter, firstMountainRangeRatio, 1, 0, 1)
     heightMultiplier = pow(rangePos + 0.3, 2)
     finalHeight = baseHeight * heightMultiplier * 3.5
     finalHeight += linearHeightBoost * 2
   }
 
-  // nothing below zero
+  // nothing below road level (0)
   finalHeight = max(finalHeight, 0)
 
   return finalHeight
 }
 
-
-// setup audio
+// making it actually play sounds
 async function setupAudioContext() {
   try {
-    audioAnalyser = new Tone.Analyser("waveform", 256)
+    audioAnalyser = new Tone.Analyser("waveform", 256) // watches the sound
     await loadMidiFile(midiFiles[currentMidiIndex])
   } catch (error) {
-    console.error("audio setup failed", error)
+    console.error("oops, audio setup messed up error", error)
   }
 }
 
-// load midi file
 async function loadMidiFile(filename) {
   try {
-    const response = await fetch(`../assets/MIDI/${filename}`)
+    const response = await fetch(`assets/MIDI/${filename}`)
     const midiData = await response.json()
     midi = midiData
 
@@ -300,30 +294,28 @@ async function loadMidiFile(filename) {
       currentTempo = midi.header.tempos[0].bpm || 120
     }
 
-    console.log(`loaded ${filename}, tempo ${currentTempo}`)
+    console.log(`yo, loaded ${filename}, tempo ${currentTempo}`)
   } catch (error) {
-    console.error("midi load failed", error)
+    console.error("Error loading MIDI file error", error)
   }
 }
 
-// analyze audio
 function updateAudioAnalysis() {
   if (!audioAnalyser) return
 
   const waveform = audioAnalyser.getValue()
 
-  // calculate loudness
+  // calculate RMS
   let sum = 0
   for (let i = 0; i < waveform.length; i++) {
     sum += waveform[i] * waveform[i]
   }
   let rms = Math.sqrt(sum / waveform.length)
 
-  // smooth it out
+  // smooth intensity to not get choppy movments
   currentIntensity = lerp(currentIntensity, rms * 5, 0.15)
 }
 
-// play music
 async function playMusic() {
   if (!midi || isPlaying) return
 
@@ -332,13 +324,13 @@ async function playMusic() {
       await Tone.start()
     }
 
-    // clear old synths
+    // get rid of old synths
     synths.forEach((synth) => synth.dispose())
     synths = []
 
     const now = Tone.now() + 0.1
 
-    // make synths for each track
+    // create synths for each track
     midi.tracks.forEach((track) => {
       if (track.notes && track.notes.length > 0) {
         const synth = new Tone.PolySynth(Tone.Synth, {
@@ -371,11 +363,10 @@ async function playMusic() {
 
     isPlaying = true
   } catch (error) {
-    console.error("play failed", error)
+    console.error("error playing music error", error)
   }
 }
 
-// stop music
 function stopMusic() {
   if (!isPlaying) return
 
@@ -385,7 +376,6 @@ function stopMusic() {
   currentIntensity = 0
 }
 
-// next song
 async function nextSong() {
   stopMusic()
   currentMidiIndex = (currentMidiIndex + 1) % midiFiles.length
@@ -393,7 +383,6 @@ async function nextSong() {
   updateSongDisplay()
 }
 
-// previous song
 async function prevSong() {
   stopMusic()
   currentMidiIndex =
@@ -402,7 +391,6 @@ async function prevSong() {
   updateSongDisplay()
 }
 
-// update song name
 function updateSongDisplay() {
   const songName = midiFiles[currentMidiIndex].replace(".json", "")
   select("#songDisplay").html(
@@ -412,7 +400,7 @@ function updateSongDisplay() {
   )
 }
 
-// make UI buttons
+// buttons and stuff
 function createUIControls() {
   const uiContainer = createDiv("")
   uiContainer.position(20, 20)
@@ -464,7 +452,6 @@ function createUIControls() {
   updateSongDisplay()
 }
 
-// style buttons
 function styleButton(button) {
   button.style("background", "#333")
   button.style("color", "white")
@@ -474,10 +461,12 @@ function styleButton(button) {
   button.style("cursor", "pointer")
 }
 
-// resize window
+// looks good on any screen
 function windowResized() {
+ 
   calculateScaleFactor()
 
+  // scale canvas to fit window
   let canvasElement = document.querySelector("canvas")
   if (canvasElement) {
     canvasElement.style.width = windowWidth + "px"
