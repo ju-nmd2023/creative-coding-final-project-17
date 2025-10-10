@@ -1,12 +1,7 @@
 [
   {
-    "file": "experiments/sunbackground.js",
+    "file": ["experiments/sunbackground.js", "experiments/vaporwaveVisualizer.js"],
     "name": "Vaporwave Visualizer",
-    "description": "Vaporwave visualizer with tone.js and P5.js"
-  },
-  {
-    "file": "experiments/VaporwaveVisualizer.js",
-    "name": "Vaporwave Visualizer",
-    "description": "Vaporwave visualizer with tone.js and P5.js"
+    "description": "A retro vaporwave music visualizer featuring an animated 3D wireframe landscape that reacts to music. Built with p5.js and Tone.js, it includes a gradient sun background and pulsing terrain that responds to audio intensity."
   }
 ]

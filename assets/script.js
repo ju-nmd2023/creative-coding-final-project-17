@@ -73,11 +73,15 @@ function goToExperiment(index) {
     });
   }
 
-  const codeScript = document.createElement("script");
-  codeScript.type = "text/javascript";
-  codeScript.src = experiment.file;
-  codeScript.defer = true;
-  bodyElement.appendChild(codeScript);
+  // Handle file as either a string or an array of files
+  const files = Array.isArray(experiment.file) ? experiment.file : [experiment.file];
+  files.forEach((file) => {
+    const codeScript = document.createElement("script");
+    codeScript.type = "text/javascript";
+    codeScript.src = file;
+    codeScript.defer = true;
+    bodyElement.appendChild(codeScript);
+  });
 
   const styleLink = document.createElement("link");
   styleLink.rel = "stylesheet";

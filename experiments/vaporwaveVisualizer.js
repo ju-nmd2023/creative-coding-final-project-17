@@ -41,19 +41,20 @@ let currentTempo = 120
 
 
 const midiFiles = [
+  "KnightRider.json",
   "Initial D - Rage Your Dream.json",
   "MGMT - Kids.json",
   "daft_punk-giorgio_by_moroder.json",
   "Crawling (linkin park).json",
   "Alphaville - Big in Japan.json",
   "Axel F.json",
-  "Numb.json",
   "Maroon 5 - One more night.json",
   "Hamster Dance.json",
   "Dreamscape.json",
   "David Guetta Kid Cudi - Memories.json",
   "Cry for you.json",
   "Sans undertale.json",
+  "Blondie-CallMe.json",
 ]
 let currentMidiIndex = 0;
 
@@ -62,6 +63,7 @@ let pink, cyan, green
 
 function setup() {
   createCanvas(canvasWidth, canvasHeight)
+  // blendMode(NORMAL); //Very cool glow effect, keep somehow.
 
   pixelDensity(Math.floor(1 + Math.max(windowWidth, windowHeight) / canvasWidth))
 
@@ -79,15 +81,10 @@ function setup() {
   pink = color(255, 0, 255)
   cyan = color(0, 255, 255)
   green = color(0, 255, 0)
-  sunColor1 = color(255, 100, 150)
-  sunColor2 = color(255, 200, 50)
 
-  // draw the background here 
-  drawVaporwaveBackground(
-    backgroundLayer,
-    canvasWidth,
-    canvasHeight,
-  )
+
+  // draw the vaporwave sun background once
+  drawVaporwaveBackground()
 
   // setup music player
   setupAudioContext()
@@ -124,16 +121,19 @@ const createVertices = (cols, rows, scale = 1) => {
 }
 
 function draw() {
+
+  
   // if music playing, update visualizer
   if (isPlaying && audioAnalyser) {
     updateAudioAnalysis()
   }
 
+
+
   // clear main canvas
   clear()
 
-  // put background on main canvas
-  image(backgroundLayer, 0, 0)
+ 
 
   // draw 3D wireframe onto its own layer
   drawWireframeLandscape()
@@ -153,73 +153,94 @@ function draw() {
 
 // cool wireframe mountains and road
 function drawWireframeLandscape() {
+  // clear with transparency
   foregroundLayer.clear()
+  
   foregroundLayer.push()
-
+  
   foregroundLayer.translate(0, 10, -1400)
   foregroundLayer.rotateX(PI / 2.006)
   foregroundLayer.translate(-gridWidth / 2, gridHeight / 2 - 150)
-
+  
   // make colors pulse
   let time = frameCount * 0.05
   let mountainMix = (sin(time) + 1) / 2
-
-  foregroundLayer.strokeWeight(1)
-  foregroundLayer.noFill()
-
+  
+  // foregroundLayer.strokeWeight(0)
+  foregroundLayer.noStroke()
+  // foregroundLayer.noFill()
   // base amplitude
   const baseAmplitude = 25
   // bounce with music
-  const audioMultiplier = 1 + currentIntensity * 2.5
+  const audioMultiplier = 1 + currentIntensity * 4
   const amplitude = baseAmplitude * audioMultiplier
+  
+  // draw a big white circle at the horizon (behind the terrain)
+  // this lets the background layer show through
+  
+  foregroundLayer.push()
+  blendMode(HARD_LIGHT);
+  foregroundLayer.translate(gridWidth * 0.5, gridHeight * 0.05, -50) // position at horizon, behind terrain
+  foregroundLayer.rotateX(PI / 2) // face the camera
+  foregroundLayer.fill(127.5) // grey mask (half of 255) idk if .5 should work but it does
+  foregroundLayer.noStroke()
+  foregroundLayer.ellipse(0, 0, gridWidth * 3, gridWidth * 3) // big circle
 
+  
+  foregroundLayer.pop()
+  // put background on main canvas
+  image(backgroundLayer, 0, 0)
+   
+  
   // draw terrain using triangle strips
   for (let y = 0; y < rows - 1; y++) {
     foregroundLayer.beginShape(TRIANGLE_STRIP)
-
+    
     for (let x = 0; x < columns; x++) {
       // road or mountains
       let distFromCenter = abs(x - columns / 2) / (columns / 2)
-
+      
       // calculate colors
       let strokeColor = lerpColor(cyan, pink, mountainMix)
-
+      
       foregroundLayer.stroke(strokeColor)
       foregroundLayer.strokeWeight(0.5)
       foregroundLayer.fill(0)
-
+      
       const currentIndex = y * columns + x
       const nextIndex = (y + 1) * columns + x
-
+      
       // get x,y positions
       let [x1, y1] = vertices[currentIndex]
       let [x2, y2] = vertices[nextIndex]
-
+      
       // add scroll offset and loop seamlessly
       let scrolledY1 = (y1 + terrainScrollOffset) % gridHeight
       let scrolledY2 = (y2 + terrainScrollOffset) % gridHeight
-
+      
       // sample noise based on scrolled position for smooth movement
       let xnoise = (x * gridScale) * noiseScale / gridScale
       let ynoise1 =
-        (scrolledY1 + noiseOffset * gridScale / noiseScale) * noiseScale /
-        gridScale
+      (scrolledY1 + noiseOffset * gridScale / noiseScale) * noiseScale /
+      gridScale
       let ynoise2 =
-        (scrolledY2 + noiseOffset * gridScale / noiseScale) * noiseScale /
-        gridScale
-
+      (scrolledY2 + noiseOffset * gridScale / noiseScale) * noiseScale /
+      gridScale
+      
       // get terrain height with music and mountains
       let z1 = getTerrainHeight(xnoise, ynoise1, distFromCenter, amplitude)
       let z2 = getTerrainHeight(xnoise, ynoise2, distFromCenter, amplitude)
-
+      
       foregroundLayer.vertex(x1, scrolledY1, z1)
       foregroundLayer.vertex(x2, scrolledY2, z2)
     }
-
+    
     foregroundLayer.endShape()
   }
-
+  
   foregroundLayer.pop()
+  
+  
 }
 
 // calculate terrain height with noise and music and mountains
@@ -274,13 +295,30 @@ function getTerrainHeight(xnoise, ynoise, distFromCenter, amplitude) {
   return finalHeight
 }
 
+// draw vaporwave sun background with gradient
+// Uses the drawVaporwaveSun function from sunbackground.js
+// To use this sketch, load sunbackground.js before vaporwaveVisualizer.js in your HTML:
+// <script src="experiments/sunbackground.js"></script>
+// <script src="experiments/vaporwaveVisualizer.js"></script>
+function drawVaporwaveBackground() {
+  backgroundLayer.fill(0)
+  backgroundLayer.push()
+  
+  // Check if the function is available, otherwise use fallback
+  if (typeof drawVaporwaveSun === 'function') {
+    // Use the imported function from sunbackground.js
+    drawVaporwaveSun(backgroundLayer, canvasWidth/2, canvasHeight/2.5, 300)
+  } 
+  backgroundLayer.pop()
+}
+
 // making it actually play sounds
 async function setupAudioContext() {
   try {
     audioAnalyser = new Tone.Analyser("waveform", 256) // watches the sound
     await loadMidiFile(midiFiles[currentMidiIndex])
   } catch (error) {
-    console.error("oops, audio setup messed up error", error)
+    console.error("audio setupp error", error)
   }
 }
 
@@ -291,10 +329,10 @@ async function loadMidiFile(filename) {
     midi = midiData
 
     if (midi.header.tempos && midi.header.tempos.length > 0) {
-      currentTempo = midi.header.tempos[0].bpm || 120
+      currentTempo = midi.header.tempos[0].bpm || 80
     }
 
-    console.log(`yo, loaded ${filename}, tempo ${currentTempo}`)
+    console.log(`loaded ${filename}, tempo ${currentTempo}`)
   } catch (error) {
     console.error("Error loading MIDI file error", error)
   }
@@ -330,27 +368,43 @@ async function playMusic() {
 
     const now = Tone.now() + 0.1
 
-    // create synths for each track
+    // create synths for each track with polished sound engine
     midi.tracks.forEach((track) => {
       if (track.notes && track.notes.length > 0) {
+        // 1️⃣ Synth setup with mild detune
         const synth = new Tone.PolySynth(Tone.Synth, {
-          envelope: {
-            attack: 0.02,
-            decay: 0.1,
-            sustain: 0.3,
-            release: 1,
+          oscillator: {
+            type: "sawtooth",
           },
-          volume: -6,
+          envelope: {
+            attack: 0.05,
+            decay: 0.3,
+            sustain: 0.4,
+            release: 1.2,
+          },
+          detune: 5,
+          volume: -12, // lower individual synth volume
         })
 
-        synth.connect(audioAnalyser)
-        synth.toDestination()
+        // 2️⃣ Optional track gain stage
+        const trackGain = new Tone.Gain(0.6)
 
-        synths.push(synth)
+        // 3️⃣ FX chain
+        const filter = new Tone.Filter(1000, "lowpass", -12)
+        const chorus = new Tone.Chorus(4, 2.5, 0.25).start()
+        const reverb = new Tone.Reverb({ decay: 2.5, wet: 0.3 })
+        const delay = new Tone.FeedbackDelay("8n", 0.25)
 
-        // schedule notes
+        // 4️⃣ Connect the chain cleanly
+        // synth → filter → chorus → reverb → delay → gain → destination
+        synth.chain(filter, chorus, reverb, delay, trackGain, Tone.Destination)
+
+        // If you need to send audio to an analyser, tap it from the trackGain node:
+        trackGain.connect(audioAnalyser)
+
+        // 5️⃣ Play notes
         track.notes.forEach((note) => {
-          const duration = Math.max(0.01, note.duration || 0)
+          const duration = Math.max(0.01, note.duration || 0.1)
           synth.triggerAttackRelease(
             note.name,
             duration,
@@ -358,6 +412,8 @@ async function playMusic() {
             note.velocity,
           )
         })
+
+        synths.push(synth)
       }
     })
 
