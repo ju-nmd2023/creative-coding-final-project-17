@@ -47,7 +47,6 @@ const midiFiles = [
   "daft_punk-giorgio_by_moroder.json",
   "Crawling (linkin park).json",
   "Alphaville - Big in Japan.json",
-  "Axel F.json",
   "Maroon 5 - One more night.json",
   "Hamster Dance.json",
   "Dreamscape.json",
