@@ -39,7 +39,7 @@ let audioAnalyser = null
 let currentIntensity = 0
 let currentTempo = 120
 
-
+// Midi files converted using toneJS midi  https://tonejs.github.io/Midi/
 const midiFiles = [
   "KnightRider.json",
   "Initial D - Rage Your Dream.json",
@@ -77,10 +77,10 @@ function setup() {
   // make all the little dots for terrain
   vertices = createVertices(columns, rows, gridScale)
 
-  // define sick color palette
+  // define color palette
   pink = color(255, 0, 255)
   cyan = color(0, 255, 255)
-  green = color(0, 255, 0)
+
 
 
   // draw the vaporwave sun background once
@@ -104,7 +104,7 @@ function calculateScaleFactor() {
   scaleFactor = windowWidth / canvasWidth
 }
 
-// helper functions for bumpy terrain
+// terrain helper functions
 const mapNoise = (value, min, max) =>
   (max - min) * Math.sin(value * value * Math.PI) + min
 
@@ -121,9 +121,10 @@ const createVertices = (cols, rows, scale = 1) => {
 }
 
 function draw() {
+  //added this after seeing this youtube video on drawingcontext blur filter: https://www.youtube.com/watch?v=s7CTmJt0NfI
+  drawingContext.filter = 'blur(2px) contrast(110%)';
 
-  
-  // if music playing, update visualizer
+  // if music playin and visualiser / audio analyser is initalised, update visualiser
   if (isPlaying && audioAnalyser) {
     updateAudioAnalysis()
   }
@@ -151,7 +152,7 @@ function draw() {
   }
 }
 
-// cool wireframe mountains and road
+// Looked at his codepen by maksim while creating the wireframe: https://codepen.io/skydr/pen/WKVpVj
 function drawWireframeLandscape() {
   // clear with transparency
   foregroundLayer.clear()
@@ -204,7 +205,7 @@ function drawWireframeLandscape() {
       let strokeColor = lerpColor(cyan, pink, mountainMix)
       
       foregroundLayer.stroke(strokeColor)
-      foregroundLayer.strokeWeight(0.5)
+      foregroundLayer.strokeWeight(.5)
       foregroundLayer.fill(0)
       
       const currentIndex = y * columns + x
@@ -248,7 +249,7 @@ function getTerrainHeight(xnoise, ynoise, distFromCenter, amplitude) {
   // basic terrain bumps (Perlin noise)
   let baseHeight = map(noise(xnoise, ynoise), 0, 1, -amplitude, amplitude)
 
-  // add more detail for roughness
+  // addsmore detail for roughness
   baseHeight += map(
     noise(xnoise * 2, ynoise * 2),
     0,
@@ -272,17 +273,17 @@ function getTerrainHeight(xnoise, ynoise, distFromCenter, amplitude) {
   let finalHeight
 
   if (distFromCenter < roadWidthRatio) {
-    // road super flat
+    // road  flat part
     heightMultiplier = pow(distFromCenter + 0.2, 4)
     finalHeight = baseHeight * heightMultiplier
   } else if (distFromCenter < firstMountainRangeRatio) {
-    // first mountains kinda tall
+    // first mountains 
     let rangePos = map(distFromCenter, roadWidthRatio, firstMountainRangeRatio, 0, 1)
     heightMultiplier = pow(rangePos + 0.5, 2.5)
     finalHeight = baseHeight * heightMultiplier * 1.5
     finalHeight += linearHeightBoost
   } else {
-    // second mountains OMG so tall!
+    // second mountains section taller
     let rangePos = map(distFromCenter, firstMountainRangeRatio, 1, 0, 1)
     heightMultiplier = pow(rangePos + 0.3, 2)
     finalHeight = baseHeight * heightMultiplier * 3.5
@@ -296,15 +297,13 @@ function getTerrainHeight(xnoise, ynoise, distFromCenter, amplitude) {
 }
 
 // draw vaporwave sun background with gradient
-// Uses the drawVaporwaveSun function from sunbackground.js
-// To use this sketch, load sunbackground.js before vaporwaveVisualizer.js in your HTML:
-// <script src="experiments/sunbackground.js"></script>
-// <script src="experiments/vaporwaveVisualizer.js"></script>
+// Uses sunbackground.js
+// (this way it was easier to split the work)
 function drawVaporwaveBackground() {
   backgroundLayer.fill(0)
   backgroundLayer.push()
   
-  // Check if the function is available, otherwise use fallback
+  
   if (typeof drawVaporwaveSun === 'function') {
     // Use the imported function from sunbackground.js
     drawVaporwaveSun(backgroundLayer, canvasWidth/2, canvasHeight/2.5, 300)
@@ -312,7 +311,12 @@ function drawVaporwaveBackground() {
   backgroundLayer.pop()
 }
 
-// making it actually play sounds
+
+// Audio section was made while looking at tone.js midi example as a base https://github.com/Tonejs/Midi/blob/master/examples/load.html
+// this video helped us figure out how to make the sound more synthy and configure filters https://www.youtube.com/watch?v=UCNRRag2GgE
+
+
+// Audio context setup, this is just starting the audio analyser and then triggering the file loading
 async function setupAudioContext() {
   try {
     audioAnalyser = new Tone.Analyser("waveform", 256) // watches the sound
@@ -354,6 +358,8 @@ function updateAudioAnalysis() {
   currentIntensity = lerp(currentIntensity, rms * 5, 0.15)
 }
 
+
+
 async function playMusic() {
   if (!midi || isPlaying) return
 
@@ -368,10 +374,10 @@ async function playMusic() {
 
     const now = Tone.now() + 0.1
 
-    // create synths for each track with polished sound engine
+    // create synths for each track with 
     midi.tracks.forEach((track) => {
       if (track.notes && track.notes.length > 0) {
-        // 1️⃣ Synth setup with mild detune
+        // Sytnh setup
         const synth = new Tone.PolySynth(Tone.Synth, {
           oscillator: {
             type: "sawtooth",
@@ -386,23 +392,21 @@ async function playMusic() {
           volume: -12, // lower individual synth volume
         })
 
-        // 2️⃣ Optional track gain stage
+        // Track gain
         const trackGain = new Tone.Gain(0.6)
 
-        // 3️⃣ FX chain
+        // FX chain
         const filter = new Tone.Filter(1000, "lowpass", -12)
         const chorus = new Tone.Chorus(4, 2.5, 0.25).start()
         const reverb = new Tone.Reverb({ decay: 2.5, wet: 0.3 })
         const delay = new Tone.FeedbackDelay("8n", 0.25)
 
-        // 4️⃣ Connect the chain cleanly
-        // synth → filter → chorus → reverb → delay → gain → destination
+      // connect instrument chain
         synth.chain(filter, chorus, reverb, delay, trackGain, Tone.Destination)
 
-        // If you need to send audio to an analyser, tap it from the trackGain node:
         trackGain.connect(audioAnalyser)
 
-        // 5️⃣ Play notes
+        // Play notes
         track.notes.forEach((note) => {
           const duration = Math.max(0.01, note.duration || 0.1)
           synth.triggerAttackRelease(
@@ -456,7 +460,7 @@ function updateSongDisplay() {
   )
 }
 
-// buttons and stuff
+// UI 
 function createUIControls() {
   const uiContainer = createDiv("")
   uiContainer.position(20, 20)
