@@ -49,7 +49,6 @@ const midiFiles = [
   "Alphaville - Big in Japan.json",
   "Maroon 5 - One more night.json",
   "Hamster Dance.json",
-  "Dreamscape.json",
   "David Guetta Kid Cudi - Memories.json",
   "Cry for you.json",
   "Sans undertale.json",
