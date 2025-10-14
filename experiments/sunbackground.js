@@ -9,7 +9,8 @@ function drawVaporwaveSun(layer, x, y, size) {
   
   bgGradient.addColorStop(0, 'rgba(100, 50, 1, 1)') // purple magenta thing
   bgGradient.addColorStop(0.1, 'rgba(10, 10, 40, 1)') // dark blue
-  bgGradient.addColorStop(0.4, 'rgba(0, 0, 0, 1)') // black
+  bgGradient.addColorStop(0.4, 'rgba(5, 5, 25, 1)') // black
+  bgGradient.addColorStop(0.8, 'rgba(0, 0, 0, 1)') // black
   
   layer.drawingContext.fillStyle = bgGradient
   layer.ellipse(x, y - 600, size * 6, size * 6) 
