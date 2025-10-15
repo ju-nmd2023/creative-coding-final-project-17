@@ -39,6 +39,9 @@ let audioAnalyser = null
 let currentIntensity = 0
 let currentTempo = 120
 
+// keyboard synth for playing notes
+let keyboardSynth = null
+
 // Midi files converted using toneJS midi  https://tonejs.github.io/Midi/
 const midiFiles = [
   "KnightRider.json",
@@ -61,7 +64,7 @@ let pink, cyan, green
 
 function setup() {
   createCanvas(canvasWidth, canvasHeight)
-  // blendMode(NORMAL); //Very cool glow effect, keep somehow.
+
 
   pixelDensity(Math.floor(1 + Math.max(windowWidth, windowHeight) / canvasWidth))
 
@@ -122,8 +125,8 @@ function draw() {
   //added this after seeing this youtube video on drawingcontext blur filter: https://www.youtube.com/watch?v=s7CTmJt0NfI
   drawingContext.filter = 'blur(2px) contrast(110%)';
 
-  // if music playin and visualiser / audio analyser is initalised, update visualiser
-  if (isPlaying && audioAnalyser) {
+  // if visualiser / audio analyser is initalised, update visualiser (works with songs or keyboard)
+  if (audioAnalyser) {
     updateAudioAnalysis()
   }
 
@@ -318,10 +321,37 @@ function drawVaporwaveBackground() {
 async function setupAudioContext() {
   try {
     audioAnalyser = new Tone.Analyser("waveform", 256) // watches the sound
+    
+    // setup keyboard synth for playing notes
+    setupKeyboardSynth()
+    
     await loadMidiFile(midiFiles[currentMidiIndex])
   } catch (error) {
     console.error("audio setupp error", error)
   }
+}
+
+// setup a synth for keyboard playing
+function setupKeyboardSynth() {
+  keyboardSynth = new Tone.PolySynth(Tone.Synth, {
+    oscillator: {
+      type: "sawtooth",
+    },
+    envelope: {
+      attack: 0.05,
+      decay: 0.3,
+      sustain: 0.4,
+      release: 1.2,
+    },
+    volume: -8,
+  })
+
+  // FX chain for keyboard synth
+  const filter = new Tone.Filter(1200, "lowpass", -12)
+  const chorus = new Tone.Chorus(4, 2.5, 0.25).start()
+  const reverb = new Tone.Reverb({ decay: 2.5, wet: 0.3 })
+  
+  keyboardSynth.chain(filter, chorus, reverb, audioAnalyser, Tone.Destination)
 }
 
 async function loadMidiFile(filename) {
@@ -378,7 +408,7 @@ async function playMusic() {
         // Sytnh setup
         const synth = new Tone.PolySynth(Tone.Synth, {
           oscillator: {
-            type: "sawtooth",
+            type: "sawtooth", //sawtooth sounds best and clearest
           },
           envelope: {
             attack: 0.05,
@@ -387,7 +417,7 @@ async function playMusic() {
             release: 1.2,
           },
           detune: 5,
-          volume: -12, // lower individual synth volume
+          volume: -12, 
         })
 
         // Track gain
@@ -507,6 +537,7 @@ function createUIControls() {
   nextBtn.mousePressed(nextSong)
   styleButton(nextBtn)
 
+
   updateSongDisplay()
 }
 
@@ -517,6 +548,34 @@ function styleButton(button) {
   button.style("padding", "8px 12px")
   button.style("border-radius", "5px")
   button.style("cursor", "pointer")
+}
+
+// keyboard controls to note map
+async function keyPressed() {
+  const noteMap = {
+    '1': 'C4',  
+    '2': 'D4',  
+    '3': 'E4',  
+    '4': 'F4',  
+    '5': 'G4',  
+    '6': 'A4',  
+    '7': 'B4',  
+    '8': 'C5',
+    '9': 'F3',
+    '0': 'A2',
+  }
+
+  if (noteMap[key]) {
+    // start audio context so the visualizer visualizes
+    if (Tone.context.state !== "running") {
+      await Tone.start()
+    }
+    
+    // play a note
+    if (keyboardSynth) {
+      keyboardSynth.triggerAttackRelease(noteMap[key], "4n")
+    }
+  }
 }
 
 // looks good on any screen

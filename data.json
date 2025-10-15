@@ -2,6 +2,6 @@
   {
     "file": ["experiments/sunbackground.js", "experiments/vaporwaveVisualizer.js"],
     "name": "Vaporwave Visualizer",
-    "description": "A retro vaporwave music visualizer featuring an animated 3D wireframe landscape that reacts to music. Built with p5.js and Tone.js, it includes a gradient sun background and pulsing terrain that responds to audio intensity."
+    "description": "A retrovawe music visualizer. Chose a midi song in the top left or play your own music with keys 1-8 on your keyboard."
   }
 ]
