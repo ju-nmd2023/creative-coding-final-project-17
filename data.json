@@ -1,7 +1,7 @@
 [
   {
-    "file": ["experiments/sunbackground.js", "experiments/vaporwaveVisualizer.js"],
-    "name": "Vaporwave Visualizer",
+    "file": ["experiments/sunbackground.js", "experiments/nightDrive.js"],
+    "name": "Night Drive",
     "description": "A retrovawe music visualizer. Chose a midi song in the top left or play your own music with keys 1-8 on your keyboard."
   }
 ]

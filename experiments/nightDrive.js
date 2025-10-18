@@ -125,7 +125,7 @@ function draw() {
   //added this after seeing this youtube video on drawingcontext blur filter: https://www.youtube.com/watch?v=s7CTmJt0NfI
   drawingContext.filter = 'blur(2px) contrast(110%)';
 
-  // if visualiser / audio analyser is initalised, update visualiser (works with songs or keyboard)
+  // if visualiser / audio analyser is initalised, update visualiser
   if (audioAnalyser) {
     updateAudioAnalysis()
   }
@@ -488,7 +488,9 @@ function updateSongDisplay() {
   )
 }
 
-// UI 
+// UI - taken from Antons prism visualizer. Inject html with simple css styles. 
+// I wrote the play pause skip functions and planned out how to enter the Song title and BPM varioables, but used AI to generate the interface
+
 function createUIControls() {
   const uiContainer = createDiv("")
   uiContainer.position(20, 20)
@@ -499,7 +501,7 @@ function createUIControls() {
   uiContainer.style("border-radius", "10px")
   uiContainer.style("z-index", "1000")
 
-  const title = createP("Vaporwave Visualizer")
+  const title = createP("Night Drive")
   title.parent(uiContainer)
   title.style("margin", "0 0 10px 0")
   title.style("font-weight", "bold")
@@ -578,7 +580,7 @@ async function keyPressed() {
   }
 }
 
-// looks good on any screen
+
 function windowResized() {
  
   calculateScaleFactor()
